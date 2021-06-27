@@ -1,0 +1,36 @@
+[package]
+name = "multiparty"
+version = "0.1.0"
+authors = ["Paolo Barbolini <paolo@paolo565.org>"]
+description = "Simple zero copy streaming multipart decoder implementation"
+license = "MIT/Apache-2.0"
+keywords = ["multipart", "form-data", "http", "async"]
+categories = ["asynchronous", "web-programming", "web-programming::http-server"]
+repository = "https://github.com/paolobarbolini/multiparty"
+edition = "2018"
+
+[dependencies]
+bytes = "1"
+
+# server
+httparse = { version = "1", optional = true }
+memchr = { version = "2.4", optional = true }
+
+# futures03
+futures-core = { version = "0.3", default-features = false, optional = true }
+pin-project-lite = { version = "0.2", optional = true }
+try-lock = { version = "0.2.3", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt"] }
+futures-util = { version = "0.3", default-features = false }
+fastrand = "1"
+
+[features]
+server = ["httparse", "memchr"]
+futures03 = ["futures-core", "pin-project-lite", "try-lock"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
