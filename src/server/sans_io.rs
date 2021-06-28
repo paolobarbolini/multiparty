@@ -10,7 +10,7 @@
 //! [`server`]: crate::server
 
 use std::error::Error as StdError;
-use std::fmt::{self, Display};
+use std::fmt::{self, Debug, Display};
 use std::mem;
 
 use bytes::{Buf, Bytes};
@@ -346,5 +346,11 @@ impl FormData {
     /// Prepare space in [`FormData`] for more [`Bytes`] to be written.
     fn set_need_bytes2(&mut self) {
         self.bytes1 = join_bytes(mem::take(&mut self.bytes1), mem::take(&mut self.bytes2));
+    }
+}
+
+impl Debug for FormData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("FormData").finish()
     }
 }

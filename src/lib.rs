@@ -47,7 +47,7 @@
 
 #![forbid(unsafe_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![deny(missing_docs)]
+#![deny(missing_docs, missing_debug_implementations)]
 
 #[cfg(not(feature = "server"))]
 compile_error!("This version requires the `server` feature on");

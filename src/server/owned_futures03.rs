@@ -192,6 +192,12 @@ where
     }
 }
 
+impl<S> Debug for Part<S> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Part").finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
