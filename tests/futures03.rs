@@ -8,6 +8,8 @@ use futures_core::FusedStream;
 use futures_util::stream::{self, StreamExt, TryStreamExt};
 #[cfg(all(feature = "server", feature = "futures03"))]
 use multiparty::server::owned_futures03::FormData;
+#[cfg(all(feature = "server", feature = "futures03"))]
+use multiparty::server::sans_io::Error;
 
 #[cfg(all(feature = "server", feature = "futures03"))]
 fn ready_yield_now_maybe<T>(t: T) -> impl Future<Output = T> {
@@ -91,6 +93,80 @@ async fn bytes() {
     {
         assert!(parts.next().await.is_none());
         assert!(parts.is_terminated());
+    }
+
+    {
+        assert!(parts.next().await.is_none());
+        assert!(parts.is_terminated());
+    }
+}
+
+#[cfg(all(feature = "server", feature = "futures03"))]
+#[tokio::test]
+async fn bytes_bad_suffix() {
+    let boundary = "--abcdef1234--";
+    let body = format!(
+        "\
+         --{0}\r\n\
+         content-disposition: form-data; name=\"foo\"\r\n\r\n\
+         bar\r\n\
+         --{0}??\r\n\
+         ",
+        boundary
+    );
+
+    let s = stream::once(ready_yield_now_maybe(Ok(Bytes::from(body))));
+    let mut parts = FormData::new(s, boundary);
+
+    assert!(!parts.is_terminated());
+
+    {
+        let mut part1 = parts.next().await.unwrap().unwrap();
+        let headers1 = part1.raw_headers().parse().unwrap();
+        assert_eq!(headers1.name, "foo");
+        assert!(headers1.filename.is_none());
+        assert!(headers1.content_type.is_none());
+
+        assert!(!part1.is_terminated());
+        let bytes1 = part1.next().await.unwrap().unwrap();
+        assert_eq!(bytes1, "bar".as_bytes());
+
+        assert!(part1.next().await.is_none());
+        assert!(part1.is_terminated());
+    }
+
+    {
+        assert_eq!(
+            parts.next().await.unwrap().unwrap_err().to_string(),
+            Error::UnexpectedBoundarySuffix.to_string()
+        );
+    }
+}
+
+#[cfg(all(feature = "server", feature = "futures03"))]
+#[tokio::test]
+async fn bytes_bad_headers() {
+    let boundary = "--abcdef1234--";
+    let body = format!(
+        "\
+         --{0}\r\n\
+         stuff\r\n\r\n\
+         bar\r\n\
+         --{0}--\r\n\
+         ",
+        boundary
+    );
+
+    let s = stream::once(ready_yield_now_maybe(Ok(Bytes::from(body))));
+    let mut parts = FormData::new(s, boundary);
+
+    assert!(!parts.is_terminated());
+
+    {
+        assert_eq!(
+            parts.next().await.unwrap().unwrap_err().to_string(),
+            Error::Headers(httparse::Error::HeaderName).to_string()
+        );
     }
 }
 
